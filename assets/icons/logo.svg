@@ -1,0 +1,21 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="f-grad" x1="16" y1="12" x2="48" y2="52" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e0e7ff"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square background -->
+  <rect width="64" height="64" rx="16" fill="url(#bg-grad)"/>
+  <!-- Abstract "F" letter -->
+  <path d="M18 14h8v36h-8V14z" fill="url(#f-grad)" opacity="0.95"/>
+  <path d="M18 14h22v7H18V14z" fill="url(#f-grad)" opacity="0.95"/>
+  <path d="M18 28h16v6H18V28z" fill="url(#f-grad)" opacity="0.85"/>
+  <!-- Sound wave arcs -->
+  <path d="M44 22c3 2 5 6 5 10s-2 8-5 10" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <path d="M50 17c4 3.5 7 9 7 15s-3 11.5-7 15" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
+</svg>

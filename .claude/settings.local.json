@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node scripts/generate-ico.js:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run make:*)",
+      "Bash(taskkill:*)",
+      "WebSearch",
+      "Bash(npx electron-forge start:*)",
+      "Bash(tasklist:*)",
+      "Bash(cargo install:*)",
+      "Bash(python3:*)",
+      "Bash(py:*)",
+      "Bash(python:*)",
+      "Bash(npm install)",
+      "Bash(cargo check:*)",
+      "Bash(npx vite build)",
+      "Bash(netstat:*)"
+    ]
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "name": "flowdan",
+  "version": "1.0.0",
+  "description": "Voice dictation desktop app - speak to your microphone, AI processes and pastes text",
+  "main": ".webpack/main",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "lint": "eslint src/"
+  },
+  "author": "Daniel Rolley",
+  "license": "MIT",
+  "devDependencies": {
+    "@electron-forge/cli": "^7.6.0",
+    "@electron-forge/maker-squirrel": "^7.6.0",
+    "@electron-forge/plugin-webpack": "^7.6.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/uuid": "^10.0.0",
+    "autoprefixer": "^10.4.20",
+    "css-loader": "^7.1.2",
+    "electron": "33.2.1",
+    "fork-ts-checker-webpack-plugin": "^9.0.2",
+    "node-loader": "^2.1.0",
+    "postcss": "^8.4.49",
+    "postcss-loader": "^8.1.1",
+    "style-loader": "^4.0.0",
+    "tailwindcss": "^3.4.17",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.7.2",
+    "webpack": "^5.97.1"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.1",
+    "openai": "^4.76.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sql.js": "^1.11.0",
+    "uiohook-napi": "^1.5.4",
+    "uuid": "^11.0.3"
+  },
+  "config": {
+    "forge": {
+      "packagerConfig": {
+        "icon": "./assets/icons/app",
+        "afterCopy": ["./scripts/copy-native-modules.js"]
+      },
+      "plugins": [
+        {
+          "name": "@electron-forge/plugin-webpack",
+          "config": {
+            "mainConfig": "./webpack.main.config.ts",
+            "renderer": {
+              "config": "./webpack.renderer.config.ts",
+              "entryPoints": [
+                {
+                  "html": "./src/renderer/overlay/index.html",
+                  "js": "./src/renderer/overlay/index.tsx",
+                  "name": "overlay",
+                  "preload": {
+                    "js": "./src/preload/overlay.ts"
+                  }
+                },
+                {
+                  "html": "./src/renderer/dashboard/index.html",
+                  "js": "./src/renderer/dashboard/index.tsx",
+                  "name": "dashboard",
+                  "preload": {
+                    "js": "./src/preload/dashboard.ts"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "FlowDan",
+            "setupIcon": "./assets/icons/app.ico",
+            "createDesktopShortcut": true,
+            "createStartMenuShortcut": true
+          }
+        }
+      ]
+    }
+  }
+}
