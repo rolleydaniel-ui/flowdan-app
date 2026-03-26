@@ -29,6 +29,8 @@
 > Just download `FlowDan_2.0.0_x64-setup.exe`, run the installer, and you're ready to go. No coding required.
 >
 > **Note:** Windows SmartScreen may show "Unknown publisher" warning. This is normal for open source apps without a paid code signing certificate. Click **"More info" → "Run anyway"** to proceed. The source code is fully open — you can audit and build it yourself.
+>
+> **Security:** [VirusTotal scan](https://www.virustotal.com/gui/file/0a7219bfeb09fd0e66257ef72cacb42c3cd3cc37b45c82f0f46a0e198b847925/detection) — **0/71** major vendors clean (1 minor ML-based false positive from Trapmine, common for new unsigned apps).
 
 You'll need an **OpenAI API key** to use FlowDan — [get one here](https://platform.openai.com/api-keys) ($5 credit is enough for months of use).
 
