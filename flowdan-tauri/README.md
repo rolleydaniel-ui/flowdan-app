@@ -24,7 +24,7 @@
 
 ## Download
 
-**[Download FlowDan v2.0.0 for Windows](https://github.com/rolleydaniel-ui/flowdan/releases/latest)**
+**[Download FlowDan v2.0.0 for Windows](https://github.com/rolleydaniel-ui/flowdan-app/releases/latest)**
 
 > Just download `FlowDan_2.0.0_x64-setup.exe`, run the installer, and you're ready to go. No coding required.
 
@@ -67,7 +67,7 @@ No cloud accounts. No subscriptions. **Bring your own OpenAI API key** and you'r
 
 ### Option 1: Download Installer (Recommended)
 
-1. Go to [**Releases**](https://github.com/rolleydaniel-ui/flowdan/releases/latest)
+1. Go to [**Releases**](https://github.com/rolleydaniel-ui/flowdan-app/releases/latest)
 2. Download `FlowDan_2.0.0_x64-setup.exe`
 3. Run the installer
 4. Launch FlowDan — the setup wizard will guide you
@@ -77,7 +77,7 @@ No cloud accounts. No subscriptions. **Bring your own OpenAI API key** and you'r
 **Prerequisites:** Windows 10/11, [Rust](https://rustup.rs/), [Node.js 18+](https://nodejs.org/)
 
 ```bash
-git clone https://github.com/rolleydaniel-ui/flowdan.git
+git clone https://github.com/rolleydaniel-ui/flowdan-app.git
 cd flowdan/flowdan-tauri
 npm install
 npx tauri dev       # Development mode
@@ -173,7 +173,7 @@ flowdan-tauri/
 
 Contributions are welcome! Feel free to:
 
-- Report bugs via [Issues](https://github.com/rolleydaniel-ui/flowdan/issues)
+- Report bugs via [Issues](https://github.com/rolleydaniel-ui/flowdan-app/issues)
 - Submit pull requests
 - Suggest features
 - Improve documentation
