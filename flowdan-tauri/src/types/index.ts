@@ -3,7 +3,7 @@
 export interface Settings {
   id: number;
   openai_api_key: string | null;
-  language: "pl" | "en";
+  language: string;
   microphone_id: string | null;
   hotkey: string;
   auto_paste: boolean;
@@ -26,7 +26,7 @@ export interface HistoryEntry {
   duration_ms: number | null;
   num_words: number | null;
   is_archived: boolean;
-  source: "microphone" | "loopback";
+  source: "microphone" | "loopback" | "meeting";
   timestamp: number;
 }
 
@@ -56,4 +56,28 @@ export interface AiResponse {
   transcript?: string;
   response?: string;
   error?: string;
+}
+
+// ─── Meeting ───
+
+export interface TranscriptChunk {
+  text: string;
+  timestamp_sec: number;
+}
+
+export interface MeetingChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export type MeetingStatus = "recording" | "processing" | "finished";
+
+export interface MeetingState {
+  active: boolean;
+  status: MeetingStatus;
+  started_at: number;
+  elapsed_secs: number;
+  transcript_chunks: TranscriptChunk[];
+  chat_messages: MeetingChatMessage[];
+  summary: string | null;
 }

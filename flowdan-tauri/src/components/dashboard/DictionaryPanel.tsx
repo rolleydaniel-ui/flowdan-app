@@ -7,6 +7,7 @@ export function DictionaryPanel() {
   const [search, setSearch] = useState("");
   const [snippetsOnly, setSnippetsOnly] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showDataMgmt, setShowDataMgmt] = useState(false);
 
   const [phrase, setPhrase] = useState("");
   const [replacement, setReplacement] = useState("");
@@ -74,31 +75,65 @@ export function DictionaryPanel() {
   };
 
   return (
-    <div className="panel" style={{ paddingTop: 8 }}>
+    <div className="panel pt-2">
       <div className="panel-header">
         <div>
           <h1 className="panel-title">Dictionary</h1>
           <p className="panel-subtitle">{entries.length} replacement{entries.length !== 1 ? "s" : ""}</p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={handleExport} className="btn-ghost">Export</button>
-          <button onClick={handleImport} className="btn-ghost">Import</button>
-        </div>
+        <button
+          onClick={() => setShowDataMgmt(!showDataMgmt)}
+          className="btn-ghost flex items-center gap-1.5"
+          style={{ padding: "6px 12px" }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" x2="12" y1="15" y2="3" />
+          </svg>
+          Data
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+            className={`transition-transform duration-200 ${showDataMgmt ? "rotate-180" : ""}`}>
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
       </div>
 
+      {/* Collapsible Data Management */}
+      {showDataMgmt && (
+        <div className="flex gap-2 mb-3.5" style={{ animation: "fade-in-up 0.2s ease" }}>
+          <button onClick={handleExport} className="btn-ghost flex-1 flex items-center justify-center gap-2" style={{ padding: "8px 12px" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" x2="12" y1="3" y2="15" />
+            </svg>
+            Export JSON
+          </button>
+          <button onClick={handleImport} className="btn-ghost flex-1 flex items-center justify-center gap-2" style={{ padding: "8px 12px" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" x2="12" y1="15" y2="3" />
+            </svg>
+            Import JSON
+          </button>
+        </div>
+      )}
+
       {/* Always-visible inline add form */}
-      <div className="card" style={{ marginBottom: 14, borderColor: editingId ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.08)" }}>
+      <div className={`card mb-3.5 ${editingId ? "border-accent/15" : "border-white/[0.08]"}`}>
         <div className="flex gap-2 items-end" onKeyDown={handleKeyDown}>
-          <div style={{ flex: 1 }}>
+          <div className="flex-1">
             <label className="label">Phrase (spoken)</label>
             <input type="text" value={phrase} onChange={(e) => setPhrase(e.target.value)} placeholder="e.g., flowdan" className="w-full" />
           </div>
-          <div style={{ display: "flex", alignItems: "center", paddingBottom: 2 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" style={{ flexShrink: 0, opacity: 0.6 }}>
+          <div className="flex items-center pb-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" className="shrink-0 opacity-60">
               <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
             </svg>
           </div>
-          <div style={{ flex: 1 }}>
+          <div className="flex-1">
             <label className="label">Replacement</label>
             <input type="text" value={replacement} onChange={(e) => setReplacement(e.target.value)} placeholder="e.g., FlowDan" className="w-full" />
           </div>
@@ -114,71 +149,73 @@ export function DictionaryPanel() {
             <button onClick={resetForm} className="btn-ghost" style={{ padding: "10px 12px" }}>Cancel</button>
           )}
         </div>
-        <div className="flex items-center gap-4" style={{ marginTop: 8 }}>
+        <div className="flex items-center gap-4 mt-2">
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={isSnippet} onChange={(e) => setIsSnippet(e.target.checked)} style={{ width: 14, height: 14, accentColor: "#6366f1" }} />
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>Snippet</span>
+            <input type="checkbox" checked={isSnippet} onChange={(e) => setIsSnippet(e.target.checked)} className="w-3.5 h-3.5 accent-accent" />
+            <span className="text-xs text-white/35">Snippet</span>
           </label>
-          <select value={language} onChange={(e) => setLanguage(e.target.value)} style={{ fontSize: 11, padding: "3px 8px" }}>
+          <select value={language} onChange={(e) => setLanguage(e.target.value)} className="text-[11px] py-0.5 px-2">
             <option value="">Any language</option>
             <option value="pl">PL only</option>
             <option value="en">EN only</option>
           </select>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", marginLeft: "auto" }}>Enter to add, Esc to cancel</span>
+          <span className="text-[10px] text-white/15 ml-auto">Enter to add, Esc to cancel</span>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="flex gap-2" style={{ marginBottom: 14 }}>
-        <div style={{ position: "relative", flex: 1 }}>
-          <svg style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.15)" }} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      {/* Search & filter */}
+      <div className="flex gap-2 mb-3.5">
+        <div className="relative flex-1">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-white/15" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
           </svg>
-          <input type="text" placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full" style={{ paddingLeft: 34 }} />
+          <input type="text" placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-[34px]" />
         </div>
         <button onClick={() => setSnippetsOnly(!snippetsOnly)} className={snippetsOnly ? "btn-primary text-xs" : "btn-ghost"} style={{ padding: "6px 10px" }}>Snippets</button>
       </div>
 
       {/* Entries */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <div className="flex flex-col gap-1">
         {entries.length === 0 ? (
-          <div className="empty-state" style={{ padding: "32px 0" }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" style={{ color: "rgba(255,255,255,0.08)", marginBottom: 10 }}>
+          <div className="empty-state py-8">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="text-white/[0.08] mb-2.5">
               <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
               <path d="M8 7h6" /><path d="M8 11h4" />
             </svg>
-            <p style={{ marginBottom: 8 }}>{search ? "No matching entries" : "Add word replacements for better accuracy"}</p>
+            <p className="mb-2">{search ? "No matching entries" : "Add word replacements for better accuracy"}</p>
             {!search && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "rgba(255,255,255,0.12)" }}>
-                <span><span style={{ color: "#818cf8" }}>flowdan</span> &rarr; FlowDan</span>
-                <span><span style={{ color: "#818cf8" }}>javascript</span> &rarr; JavaScript</span>
-                <span><span style={{ color: "#818cf8" }}>api key</span> &rarr; API key</span>
+              <div className="flex flex-col gap-1 text-[11px] text-white/[0.12]">
+                <span><span className="text-accent/70">flowdan</span> &rarr; FlowDan</span>
+                <span><span className="text-accent/70">javascript</span> &rarr; JavaScript</span>
+                <span><span className="text-accent/70">api key</span> &rarr; API key</span>
               </div>
             )}
           </div>
         ) : (
           entries.map((entry) => (
-            <div key={entry.id} className="card group" style={{ padding: 10 }}>
+            <div key={entry.id} className={`card group ${entry.is_snippet ? "border-accent/10" : ""}`} style={{ padding: 10 }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#818cf8", fontWeight: 500 }}>{entry.phrase}</span>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" style={{ flexShrink: 0, opacity: 0.4 }}>
+                      {/* Pill-style phrase */}
+                      <span className="text-xs font-mono font-medium text-accent bg-accent/[0.08] border border-accent/15 px-2 py-0.5 rounded-md">{entry.phrase}</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" className="shrink-0 opacity-40">
                         <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
                       </svg>
-                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{entry.replacement}</span>
+                      {/* Tag-style replacement */}
+                      <span className="text-xs text-white/60">{entry.replacement}</span>
                     </div>
                     {(entry.is_snippet || entry.language || entry.frequency_used > 0) && (
-                      <div className="flex items-center gap-2" style={{ marginTop: 3 }}>
+                      <div className="flex items-center gap-2 mt-1">
                         {entry.is_snippet && <span className="tag tag-accent">snippet</span>}
                         {entry.language && <span className="tag">{entry.language.toUpperCase()}</span>}
-                        {entry.frequency_used > 0 && <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)" }}>Used {entry.frequency_used}x</span>}
+                        {entry.frequency_used > 0 && <span className="text-[9px] text-white/15">Used {entry.frequency_used}x</span>}
                       </div>
                     )}
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 1, opacity: 0.5, flexShrink: 0 }} className="group-hover:opacity-100">
+                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   <button onClick={() => startEdit(entry)} className="action-btn" title="Edit">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
                   </button>

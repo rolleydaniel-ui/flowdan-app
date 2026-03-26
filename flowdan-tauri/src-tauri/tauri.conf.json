@@ -5,7 +5,7 @@
   "identifier": "com.flowdan.app",
   "build": {
     "frontendDist": "../dist",
-    "devUrl": "http://localhost:5173",
+    "devUrl": "http://localhost:5177",
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build"
   },
@@ -31,14 +31,17 @@
         "label": "overlay",
         "title": "FlowDan Overlay",
         "url": "/overlay.html",
-        "width": 240,
-        "height": 52,
+        "width": 280,
+        "height": 56,
         "decorations": false,
         "transparent": true,
         "shadow": false,
         "alwaysOnTop": true,
         "visible": false,
         "resizable": false,
+        "maximizable": false,
+        "minimizable": false,
+        "closable": false,
         "skipTaskbar": true,
         "focus": false
       },
@@ -46,8 +49,8 @@
         "label": "ai-overlay",
         "title": "FlowDan AI",
         "url": "/ai-overlay.html",
-        "width": 480,
-        "height": 320,
+        "width": 340,
+        "height": 800,
         "decorations": false,
         "transparent": true,
         "shadow": false,
@@ -56,12 +59,11 @@
         "resizable": false,
         "skipTaskbar": true,
         "focus": false,
-        "x": 720,
-        "y": 40
+        "contentProtected": true
       }
     ],
     "trayIcon": {
-      "iconPath": "icons/icon.png",
+      "iconPath": "icons/tray-icon.png",
       "iconAsTemplate": false,
       "tooltip": "FlowDan - Voice Dictation"
     },

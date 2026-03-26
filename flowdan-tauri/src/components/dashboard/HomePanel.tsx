@@ -63,7 +63,7 @@ export function HomePanel({ recordingState }: Props) {
   const isRecording = recordingState === "recording";
   const isProcessing = recordingState === "processing";
 
-  const bars = Array.from({ length: 28 }, (_, i) => {
+  const bars = Array.from({ length: 32 }, (_, i) => {
     if (!isRecording) return 3;
     const wave = Math.sin(Date.now() / 200 + i * 0.4) * 0.4;
     const jitter = Math.sin(Date.now() / 100 + i * 1.5) * 0.2;
@@ -74,17 +74,19 @@ export function HomePanel({ recordingState }: Props) {
     <div className="home-panel">
       {/* Hero */}
       <div className="hero-section">
+        <div className="hero-ambient-glow" />
+
         <div className="hero-orb-wrap">
-          <div className={`hero-orb ${isRecording ? 'recording' : isProcessing ? 'processing' : ''}`}>
-            <FlowDanMark size={36} animate={isRecording} />
-            {isProcessing && <div className="hero-spinner" />}
+          <div className={`hero-orb has-border-ring ${isRecording ? 'recording' : isProcessing ? 'processing' : ''}`}>
+            <div className="hero-orb-border-ring" />
+            <FlowDanMark size={36} animate={isRecording || isProcessing} />
           </div>
         </div>
 
         <h1 className="hero-title">
           {isRecording ? "Listening..." : isProcessing ? (
             <span className="gradient-text">Processing...</span>
-          ) : "FlowDan"}
+          ) : <span className="gradient-text">FlowDan</span>}
         </h1>
         <p className="hero-sub">
           {isRecording ? "Speak naturally, release to finish" : isProcessing ? "Applying AI formatting" : "Voice dictation powered by edge AI"}
@@ -96,7 +98,10 @@ export function HomePanel({ recordingState }: Props) {
             <div
               key={i}
               className={`hero-bar ${isRecording ? 'active' : ''}`}
-              style={{ height: `${h}px`, boxShadow: isRecording && h > 8 ? '0 0 6px rgba(0,240,255,0.35)' : 'none' }}
+              style={{
+                height: `${h}px`,
+                /* clean bar, no glow */
+              }}
             />
           ))}
         </div>
@@ -106,12 +111,7 @@ export function HomePanel({ recordingState }: Props) {
           <div className="hero-hotkeys">
             <div className="hotkey-group">
               <span className="kbd">Ctrl</span><span className="hotkey-plus">+</span><span className="kbd">Win</span>
-              <span className="hotkey-label">Dictate</span>
-            </div>
-            <div className="hotkey-sep" />
-            <div className="hotkey-group">
-              <span className="kbd">Ctrl</span><span className="hotkey-plus">+</span><span className="kbd">Shift</span><span className="hotkey-plus">+</span><span className="kbd">Win</span>
-              <span className="hotkey-label">Screen AI</span>
+              <span className="hotkey-label">Hold to dictate</span>
             </div>
           </div>
         )}
@@ -173,7 +173,10 @@ export function HomePanel({ recordingState }: Props) {
         ) : (
           <div className="recent-list">
             {recent.map((entry) => (
-              <div key={entry.id} className="recent-item group">
+              <div
+                key={entry.id}
+                className={`recent-item group ${entry.source === "loopback" ? "source-loopback" : "source-mic"}`}
+              >
                 <p className="recent-text">
                   {(entry.formatted_text || entry.asr_text).slice(0, 140)}
                   {(entry.formatted_text || entry.asr_text).length > 140 ? "..." : ""}

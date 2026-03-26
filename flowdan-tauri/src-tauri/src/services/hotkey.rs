@@ -14,6 +14,9 @@ static SHIFT_HELD: AtomicBool = AtomicBool::new(false);
 static MIC_ACTIVE: AtomicBool = AtomicBool::new(false);
 static LEVEL_EMITTER_RUNNING: AtomicBool = AtomicBool::new(false);
 
+// Module-level so async callbacks can sync it back on error
+pub static MEETING_ACTIVE: AtomicBool = AtomicBool::new(false);
+
 /// Low-level keyboard hook for push-to-talk
 pub fn start_hotkey_listener(app_handle: tauri::AppHandle) {
     #[cfg(target_os = "windows")]
@@ -90,10 +93,36 @@ unsafe extern "system" fn keyboard_hook_proc(
         let win = WIN_HELD.load(Ordering::SeqCst);
         let shift = SHIFT_HELD.load(Ordering::SeqCst);
 
+        // Ctrl+Shift+M: Meeting toggle (M = 0x4D)
+        // Unambiguous — requires specific letter key, no conflict with Ctrl+Win PTT
+        static MEETING_TRIGGERED: AtomicBool = AtomicBool::new(false);
+        if ctrl && shift && !win && is_down && vk.0 == 0x4D /* M */
+            && !MEETING_TRIGGERED.load(Ordering::SeqCst)
+        {
+            MEETING_TRIGGERED.store(true, Ordering::SeqCst);
+            let is_meeting = MEETING_ACTIVE.load(Ordering::SeqCst);
+            APP_HANDLE.with(|h| {
+                if let Some(ref handle) = *h.borrow() {
+                    if !is_meeting {
+                        MEETING_ACTIVE.store(true, Ordering::SeqCst);
+                        start_meeting_session(handle);
+                    } else {
+                        MEETING_ACTIVE.store(false, Ordering::SeqCst);
+                        stop_meeting_session(handle);
+                    }
+                }
+            });
+        }
+        // Reset when M is released or modifiers released
+        if MEETING_TRIGGERED.load(Ordering::SeqCst) && (!ctrl || !shift || (!is_down && vk.0 == 0x4D)) {
+            MEETING_TRIGGERED.store(false, Ordering::SeqCst);
+        }
+
         // Ctrl+Win (no Shift): Push-to-talk (Feature 1)
-        if ctrl && win && !shift {
+        if ctrl && win && !shift && is_down {
             let was_active = MIC_ACTIVE.load(Ordering::SeqCst);
-            if !was_active && is_down {
+            if !was_active {
+                log::info!("PTT: Ctrl+Win detected, starting mic recording");
                 MIC_ACTIVE.store(true, Ordering::SeqCst);
                 APP_HANDLE.with(|h| {
                     if let Some(ref handle) = *h.borrow() {
@@ -112,17 +141,6 @@ unsafe extern "system" fn keyboard_hook_proc(
                 }
             });
         }
-
-        // Ctrl+Shift+Win: AI response (Feature 2)
-        if ctrl && shift && win && is_down {
-            if matches!(vk, VK_LWIN | VK_RWIN) {
-                APP_HANDLE.with(|h| {
-                    if let Some(ref handle) = *h.borrow() {
-                        trigger_ai_response(handle);
-                    }
-                });
-            }
-        }
     }
 
     unsafe { CallNextHookEx(None, n_code, w_param, l_param) }
@@ -132,13 +150,27 @@ fn start_mic_recording(app_handle: &tauri::AppHandle) {
     let state = app_handle.state::<AppState>();
 
     // Check state = Idle, set to Recording
+    // If stuck in Processing for >10s, force reset to Idle
     {
         let mut rec_state = state.recording_state.lock().unwrap();
         if *rec_state != RecordingState::Idle {
-            return;
+            // Check if recording_start is stale (>10s ago = stuck)
+            let is_stuck = {
+                let start = state.recording_start.lock().unwrap();
+                start.map(|s| s.elapsed().as_secs() > 10).unwrap_or(true)
+            };
+            if is_stuck {
+                log::warn!("PTT: recording_state was {:?} but stuck >10s, force resetting to Idle", *rec_state);
+                *rec_state = RecordingState::Idle;
+            } else {
+                log::warn!("PTT: recording_state is {:?}, not Idle — skipping", *rec_state);
+                return;
+            }
         }
         *rec_state = RecordingState::Recording;
     }
+
+    log::info!("PTT: starting mic recording");
 
     // Save recording start timestamp
     {
@@ -147,11 +179,17 @@ fn start_mic_recording(app_handle: &tauri::AppHandle) {
     }
 
     // Get microphone_id from settings
-    let microphone_id = {
-        let db = state.db.lock().unwrap();
-        settings_repo::get_settings(&db)
-            .ok()
-            .and_then(|s| s.microphone_id)
+    // Use try_lock to avoid blocking the hook thread (meeting loop may hold db lock)
+    let microphone_id = match state.db.try_lock() {
+        Ok(db) => {
+            settings_repo::get_settings(&db)
+                .ok()
+                .and_then(|s| s.microphone_id)
+        }
+        Err(_) => {
+            log::warn!("PTT: db lock busy, using default mic");
+            None
+        }
     };
 
     // Create and start MicRecorder
@@ -180,36 +218,56 @@ fn start_mic_recording(app_handle: &tauri::AppHandle) {
         audio_level_emitter(emitter_handle, samples_arc, sample_rate, channels);
     });
 
-    // Show overlay at bottom-center of screen
+    // Expand overlay to recording pill size and reposition
     let _ = app_handle.emit("recording-state-changed", "recording");
-    if let Some(overlay) = app_handle.get_webview_window("overlay") {
-        if let Ok(monitor) = overlay.current_monitor() {
-            if let Some(monitor) = monitor {
-                let screen = monitor.size();
-                let scale = monitor.scale_factor();
-                let w = 260.0;
-                let h = 52.0;
-                let x = (screen.width as f64 / scale - w) / 2.0;
-                let y = screen.height as f64 / scale - h - 32.0;
-                let _ = overlay.set_position(tauri::PhysicalPosition::new(
-                    (x * scale) as i32,
-                    (y * scale) as i32,
-                ));
-            }
-        }
-        let _ = overlay.show();
-    }
+    set_overlay_size(app_handle, 280.0, 56.0);
 
     log::info!("Recording started (Ctrl+Win held) — mic capture active");
 }
 
+/// Resize overlay without changing position (user may have dragged it).
+/// Only changes size + ensures always-on-top.
+fn set_overlay_size(app_handle: &tauri::AppHandle, w: f64, h: f64) {
+    if let Some(overlay) = app_handle.get_webview_window("overlay") {
+        let scale = get_screen_info(&overlay).2;
+        let _ = overlay.set_size(tauri::PhysicalSize::new(
+            (w * scale) as u32,
+            (h * scale) as u32,
+        ));
+        let _ = overlay.set_always_on_top(true);
+        let _ = overlay.show();
+    }
+}
+
+/// Get screen dimensions with fallback
+fn get_screen_info(window: &tauri::WebviewWindow) -> (f64, f64, f64) {
+    // Try current monitor first, then primary
+    let monitor = window.current_monitor().ok().flatten()
+        .or_else(|| window.primary_monitor().ok().flatten());
+
+    match monitor {
+        Some(m) => {
+            let scale = m.scale_factor();
+            let sw = m.size().width as f64 / scale;
+            let sh = m.size().height as f64 / scale;
+            (sw, sh, scale)
+        }
+        None => {
+            log::warn!("Overlay: no monitor detected, using fallback 1920x1080");
+            (1920.0, 1080.0, 1.0)
+        }
+    }
+}
+
 fn stop_mic_recording(app_handle: &tauri::AppHandle) {
+    log::info!("PTT: stopping mic recording (keys released)");
     let state = app_handle.state::<AppState>();
 
     // Check state = Recording, set to Processing
     {
         let mut rec_state = state.recording_state.lock().unwrap();
         if *rec_state != RecordingState::Recording {
+            log::warn!("PTT stop: recording_state is {:?}, not Recording", *rec_state);
             return;
         }
         *rec_state = RecordingState::Processing;
@@ -259,16 +317,14 @@ fn stop_mic_recording(app_handle: &tauri::AppHandle) {
             }
         }
 
-        // Reset state to Idle, hide overlay
+        // Reset state to Idle, shrink overlay back to idle badge
         let state = handle.state::<AppState>();
         {
             let mut rec_state = state.recording_state.lock().unwrap();
             *rec_state = RecordingState::Idle;
         }
         let _ = handle.emit("recording-state-changed", "idle");
-        if let Some(overlay) = handle.get_webview_window("overlay") {
-            let _ = overlay.hide();
-        }
+        set_overlay_size(&handle, 280.0, 56.0);
     });
 }
 
@@ -288,7 +344,61 @@ fn audio_level_emitter(
     let _ = app_handle.emit("audio-level", 0.0f32);
 }
 
-fn trigger_ai_response(app_handle: &tauri::AppHandle) {
-    let _ = app_handle.emit("ai-trigger", ());
-    log::info!("AI response triggered (Ctrl+Shift+Win)");
+fn start_meeting_session(app_handle: &tauri::AppHandle) {
+    log::info!("Meeting session starting (Ctrl+Shift+M toggle)");
+
+    let handle = app_handle.clone();
+    tauri::async_runtime::spawn(async move {
+        let state = handle.state::<AppState>();
+
+        // Check if loopback is enabled
+        let loopback_enabled = {
+            let db = state.db.lock().unwrap();
+            crate::db::settings_repo::get_settings(&db)
+                .map(|s| s.loopback_enabled)
+                .unwrap_or(false)
+        };
+
+        if !loopback_enabled {
+            log::warn!("Meeting: AI Screen Assistant is disabled");
+            MEETING_ACTIVE.store(false, Ordering::SeqCst); // sync back
+            let _ = handle.emit("meeting-error", "AI Screen Assistant is disabled. Enable it in Settings.");
+            return;
+        }
+
+        match crate::commands::audio_cmd::start_meeting_session_internal(&handle).await {
+            Ok(()) => log::info!("Meeting session started"),
+            Err(e) => {
+                log::error!("Failed to start meeting: {}", e);
+                MEETING_ACTIVE.store(false, Ordering::SeqCst); // sync back on failure
+                let _ = handle.emit("meeting-error", format!("Error: {}", e));
+            }
+        }
+    });
 }
+
+fn stop_meeting_session(app_handle: &tauri::AppHandle) {
+    log::info!("Meeting session stopping (Ctrl+Shift+M toggle)");
+
+    let handle = app_handle.clone();
+    tauri::async_runtime::spawn(async move {
+        match crate::commands::audio_cmd::stop_meeting_session_internal(&handle).await {
+            Ok(()) => {
+                log::info!("Meeting session stopped");
+                // MEETING_ACTIVE already set to false by hotkey handler
+            }
+            Err(e) => {
+                log::error!("Failed to stop meeting: {}", e);
+                // Force cleanup: clear session so next toggle can start fresh
+                let state = handle.state::<AppState>();
+                {
+                    let mut session = state.meeting_session.lock().unwrap();
+                    *session = None;
+                }
+                // MEETING_ACTIVE already false, which is correct since we cleaned up
+                let _ = handle.emit("meeting-error", format!("Error: {}", e));
+            }
+        }
+    });
+}
+

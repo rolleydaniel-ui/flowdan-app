@@ -1,15 +1,20 @@
 import { useState, useEffect } from "react";
 import type { Settings, AudioDevice } from "../../types";
 import { getSettings, updateSettings, listAudioDevices } from "../../types/tauri";
+import { appDataDir } from "@tauri-apps/api/path";
+import { invoke } from "@tauri-apps/api/core";
+import { Select } from "../shared/Select";
 
 export function SettingsPanel() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [devices, setDevices] = useState<AudioDevice[]>([]);
   const [saved, setSaved] = useState(false);
+  const [dataPath, setDataPath] = useState("");
 
   useEffect(() => {
     loadSettings();
     loadDevices();
+    appDataDir().then(setDataPath).catch(() => {});
   }, []);
 
   const loadSettings = async () => {
@@ -34,66 +39,60 @@ export function SettingsPanel() {
   if (!settings) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div style={{ width: 18, height: 18, border: "2px solid rgba(99,102,241,0.15)", borderTopColor: "rgba(99,102,241,0.5)", borderRadius: "50%", animation: "spin 0.6s linear infinite" }} />
+        <div className="w-[18px] h-[18px] border-2 border-accent/15 border-t-accent/50 rounded-full animate-spin" />
       </div>
     );
   }
 
-  // Placeholder subscription data
-  const plan = "Free Trial";
-  const minutesUsed = 12;
-  const minutesTotal = 30;
-  const usagePercent = Math.round((minutesUsed / minutesTotal) * 100);
-  const daysLeft = 5;
+  const languageOptions = [
+    { value: "pl", label: "Polski" },
+    { value: "en", label: "English" },
+    { value: "de", label: "Deutsch" },
+    { value: "fr", label: "Fran\u00e7ais" },
+    { value: "es", label: "Espa\u00f1ol" },
+    { value: "it", label: "Italiano" },
+    { value: "pt", label: "Portugu\u00eas" },
+    { value: "nl", label: "Nederlands" },
+    { value: "uk", label: "\u0423\u043a\u0440\u0430\u0457\u043d\u0441\u044c\u043a\u0430" },
+    { value: "cs", label: "\u010ce\u0161tina" },
+    { value: "sv", label: "Svenska" },
+    { value: "da", label: "Dansk" },
+    { value: "no", label: "Norsk" },
+    { value: "fi", label: "Suomi" },
+    { value: "ja", label: "\u65e5\u672c\u8a9e" },
+    { value: "ko", label: "\ud55c\uad6d\uc5b4" },
+    { value: "zh", label: "\u4e2d\u6587" },
+    { value: "ar", label: "\u0627\u0644\u0639\u0631\u0628\u064a\u0629" },
+    { value: "hi", label: "\u0939\u093f\u0928\u094d\u0926\u0940" },
+    { value: "tr", label: "T\u00fcrk\u00e7e" },
+    { value: "ru", label: "\u0420\u0443\u0441\u0441\u043a\u0438\u0439" },
+  ];
+
+  const micOptions = [
+    { value: "", label: "System default" },
+    ...devices.map((d) => ({
+      value: d.device_id,
+      label: d.label || `Mic ${d.device_id.slice(0, 8)}`,
+    })),
+  ];
 
   return (
-    <div className="panel" style={{ paddingTop: 8 }}>
+    <div className="panel pt-2">
+      {saved && (
+        <div className="floating-toast">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
+          Settings saved
+        </div>
+      )}
+
       <div className="panel-header">
         <div>
           <h1 className="panel-title">Settings</h1>
           <p className="panel-subtitle">Configure voice dictation</p>
         </div>
-        {saved && <span className="badge-saved">Saved</span>}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {/* Plan & Usage */}
-        <section className="card" style={{ borderColor: "rgba(245,158,11,0.12)" }}>
-          <div className="card-header">
-            <div className="card-icon amber">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </div>
-            <div style={{ flex: 1 }}>
-              <h2 className="card-title">Plan & Usage</h2>
-              <p className="card-desc">Your subscription and usage</p>
-            </div>
-            <span className="badge badge-amber">{plan}</span>
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-                {minutesUsed} / {minutesTotal} minutes used
-              </span>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>
-                {daysLeft} days left
-              </span>
-            </div>
-            <div className="progress-bar">
-              <div
-                className={`progress-bar-fill ${usagePercent > 80 ? "warning" : ""} ${usagePercent > 95 ? "danger" : ""}`}
-                style={{ width: `${usagePercent}%` }}
-              />
-            </div>
-          </div>
-
-          <button className="btn-amber" style={{ width: "100%", padding: "9px 18px" }}>
-            Upgrade to Pro - $9.99/mo
-          </button>
-        </section>
-
+      <div className="flex flex-col gap-3.5">
         {/* Recording */}
         <section className="card">
           <div className="card-header">
@@ -104,13 +103,13 @@ export function SettingsPanel() {
                 <line x1="12" x2="12" y1="19" y2="22" />
               </svg>
             </div>
-            <div style={{ flex: 1 }}>
+            <div className="flex-1">
               <h2 className="card-title">Voice Dictation</h2>
               <p className="card-desc">Push-to-talk microphone recording</p>
             </div>
-            <div style={{ display: "flex", gap: 4 }}>
+            <div className="flex gap-1 items-center">
               <span className="kbd">Ctrl</span>
-              <span style={{ color: "rgba(255,255,255,0.1)", fontSize: 10, display: "flex", alignItems: "center" }}>+</span>
+              <span className="text-[10px] text-white/10">+</span>
               <span className="kbd">Win</span>
             </div>
           </div>
@@ -118,151 +117,28 @@ export function SettingsPanel() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">Language</label>
-              <select
+              <Select
                 value={settings.language}
-                onChange={(e) => {
-                  const lang = e.target.value as "pl" | "en";
-                  setSettings({ ...settings, language: lang });
-                  save({ language: lang });
+                options={languageOptions}
+                onChange={(val) => {
+                  setSettings({ ...settings, language: val as string });
+                  save({ language: val });
                 }}
-                className="w-full"
-              >
-                <option value="pl">Polski</option>
-                <option value="en">English</option>
-              </select>
+              />
             </div>
             <div>
               <label className="label">Microphone</label>
-              <select
+              <Select
                 value={settings.microphone_id || ""}
-                onChange={(e) => {
-                  const id = e.target.value || null;
+                options={micOptions}
+                onChange={(val) => {
+                  const id = val || null;
                   setSettings({ ...settings, microphone_id: id });
                   save({ microphone_id: id });
                 }}
-                className="w-full"
-              >
-                <option value="">System default</option>
-                {devices.map((d) => (
-                  <option key={d.device_id} value={d.device_id}>
-                    {d.label || `Mic ${d.device_id.slice(0, 8)}`}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
           </div>
-        </section>
-
-        {/* AI Screen Assistant */}
-        <section className="card" style={{ borderColor: settings.loopback_enabled ? "rgba(139,92,246,0.15)" : undefined }}>
-          <div className="card-header">
-            <div className="card-icon violet">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 8V4H8" />
-                <rect width="16" height="12" x="4" y="8" rx="2" />
-                <path d="M2 14h2" />
-                <path d="M20 14h2" />
-                <path d="M15 13v2" />
-                <path d="M9 13v2" />
-              </svg>
-            </div>
-            <div style={{ flex: 1 }}>
-              <h2 className="card-title">AI Screen Assistant</h2>
-              <p className="card-desc">Listens to your screen audio and answers with AI</p>
-            </div>
-            <div className={`toggle ${settings.loopback_enabled ? "active" : ""}`}
-              onClick={() => {
-                const val = !settings.loopback_enabled;
-                setSettings({ ...settings, loopback_enabled: val });
-                save({ loopback_enabled: val });
-              }}
-              style={{ cursor: "pointer" }}
-            >
-              <div className="toggle-knob" />
-            </div>
-          </div>
-
-          {/* Feature explanation */}
-          {!settings.loopback_enabled && (
-            <div style={{
-              background: "rgba(139,92,246,0.04)", border: "1px solid rgba(139,92,246,0.08)",
-              borderRadius: 10, padding: 14, marginBottom: 0,
-            }}>
-              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: 8,
-                  background: "rgba(139,92,246,0.08)", display: "flex",
-                  alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1,
-                }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="1.8" strokeLinecap="round">
-                    <circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" />
-                  </svg>
-                </div>
-                <div>
-                  <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.5, marginBottom: 6 }}>
-                    Captures audio playing on your screen (meetings, videos, podcasts) and sends it to AI for instant answers.
-                  </p>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Trigger:</span>
-                    <span className="kbd">Ctrl</span>
-                    <span style={{ color: "rgba(255,255,255,0.1)", fontSize: 9 }}>+</span>
-                    <span className="kbd">Shift</span>
-                    <span style={{ color: "rgba(255,255,255,0.1)", fontSize: 9 }}>+</span>
-                    <span className="kbd">Win</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {settings.loopback_enabled && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {/* Hotkey display */}
-              <div style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                background: "rgba(139,92,246,0.04)", borderRadius: 8, padding: "8px 12px",
-              }}>
-                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Trigger hotkey</span>
-                <div style={{ display: "flex", gap: 4 }}>
-                  <span className="kbd">Ctrl</span>
-                  <span style={{ color: "rgba(255,255,255,0.1)", fontSize: 9, display: "flex", alignItems: "center" }}>+</span>
-                  <span className="kbd">Shift</span>
-                  <span style={{ color: "rgba(255,255,255,0.1)", fontSize: 9, display: "flex", alignItems: "center" }}>+</span>
-                  <span className="kbd">Win</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label">Buffer duration</label>
-                  <select
-                    value={settings.loopback_buffer_secs}
-                    onChange={(e) => {
-                      const secs = parseInt(e.target.value);
-                      setSettings({ ...settings, loopback_buffer_secs: secs });
-                      save({ loopback_buffer_secs: secs });
-                    }}
-                    className="w-full"
-                  >
-                    <option value={30}>Last 30 seconds</option>
-                    <option value={60}>Last 60 seconds</option>
-                    <option value={120}>Last 2 minutes</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="label">AI instruction</label>
-                  <input
-                    type="text"
-                    value={settings.ai_prompt}
-                    onChange={(e) => setSettings({ ...settings, ai_prompt: e.target.value })}
-                    onBlur={() => save({ ai_prompt: settings.ai_prompt })}
-                    className="w-full"
-                    placeholder="Answer concisely"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
         </section>
 
         {/* Preferences */}
@@ -277,10 +153,9 @@ export function SettingsPanel() {
             <h2 className="card-title">Preferences</h2>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <div className="flex flex-col">
             {([
               { key: "auto_paste" as const, label: "Auto-paste to active window" },
-              { key: "sound_feedback" as const, label: "Sound feedback on start/stop" },
               { key: "auto_start" as const, label: "Launch on system startup" },
             ]).map(({ key, label }) => (
               <div
@@ -292,14 +167,63 @@ export function SettingsPanel() {
                   save({ [key]: val });
                 }}
               >
+                <span className="text-[13px] text-white/55 flex-1">{label}</span>
                 <div className={`toggle ${settings[key] ? "active" : ""}`}>
                   <div className="toggle-knob" />
                 </div>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>{label}</span>
               </div>
             ))}
           </div>
         </section>
+
+        {/* Data & Storage */}
+        <section className="card">
+          <div className="card-header">
+            <div className="card-icon" style={{ background: "rgba(255,255,255,0.04)" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h2 className="card-title">Data & Storage</h2>
+              <p className="card-desc">Your transcriptions, settings, and vocabulary are stored locally</p>
+            </div>
+          </div>
+
+          {dataPath && (
+            <div className="rounded-lg bg-white/[0.02] border border-white/[0.05] p-3 mb-3">
+              <p className="text-[10px] text-white/25 mb-1">Storage location:</p>
+              <p className="text-[11px] text-white/45 font-mono break-all leading-relaxed">{dataPath}</p>
+            </div>
+          )}
+
+          <button
+            className="btn-ghost w-full py-2.5 text-xs flex items-center justify-center gap-2"
+            onClick={async () => {
+              try { await invoke("open_data_folder"); } catch { /* ignore */ }
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              <path d="M12 11v6" /><path d="M9 14l3-3 3 3" />
+            </svg>
+            Open data folder
+          </button>
+        </section>
+        {/* Reset onboarding */}
+        <button
+          className="btn-ghost w-full py-2.5 text-xs flex items-center justify-center gap-2 text-white/30"
+          onClick={() => {
+            localStorage.removeItem("flowdan_launched");
+            window.location.reload();
+          }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+            <path d="M3 22v-6h6" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+          </svg>
+          Run setup wizard again
+        </button>
       </div>
     </div>
   );

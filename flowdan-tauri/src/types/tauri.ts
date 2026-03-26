@@ -4,6 +4,8 @@ import type {
   HistoryEntry,
   DictionaryEntry,
   AudioDevice,
+  MeetingState,
+  TranscriptChunk,
 } from "./index";
 
 // ─── Settings ───
@@ -132,6 +134,32 @@ export async function stopLoopbackCapture(): Promise<void> {
 
 export async function triggerAiResponse(): Promise<void> {
   return invoke("trigger_ai_response");
+}
+
+// ─── Meeting ───
+
+export async function startMeetingSession(): Promise<void> {
+  return invoke("start_meeting_session");
+}
+
+export async function stopMeetingSession(): Promise<void> {
+  return invoke("stop_meeting_session");
+}
+
+export async function getMeetingState(): Promise<MeetingState | null> {
+  return invoke("get_meeting_state");
+}
+
+export async function getMeetingTranscript(): Promise<TranscriptChunk[]> {
+  return invoke("get_meeting_transcript");
+}
+
+export async function meetingChat(question: string): Promise<string> {
+  return invoke("meeting_chat", { question });
+}
+
+export async function dismissMeeting(): Promise<void> {
+  return invoke("dismiss_meeting");
 }
 
 // ─── Window ───

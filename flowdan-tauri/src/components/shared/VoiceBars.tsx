@@ -10,7 +10,9 @@ export function VoiceBars({ barHeights, isActive }: VoiceBarsProps) {
         <div
           key={i}
           className={`bar ${isActive ? "active" : ""}`}
-          style={{ height: `${Math.max(2.5, h * 18)}px` }}
+          style={{
+            height: `${Math.max(2.5, h * 18)}px`,
+          }}
         />
       ))}
     </div>

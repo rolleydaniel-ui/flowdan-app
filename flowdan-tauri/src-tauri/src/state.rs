@@ -12,6 +12,7 @@ pub struct AppState {
     pub loopback_buffer: Mutex<Vec<f32>>,
     pub loopback_sample_rate: Mutex<u32>,
     pub loopback_channels: Mutex<u16>,
+    pub meeting_session: Mutex<Option<MeetingSession>>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
@@ -26,6 +27,48 @@ impl Default for RecordingState {
     fn default() -> Self {
         Self::Idle
     }
+}
+
+// ─── Meeting Session ───
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct TranscriptChunk {
+    pub text: String,
+    pub timestamp_sec: f64,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct MeetingChatMessage {
+    pub role: String,    // "user" | "assistant"
+    pub content: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MeetingStatus {
+    Recording,
+    Processing,
+    Finished,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct MeetingState {
+    pub active: bool,
+    pub status: MeetingStatus,
+    pub started_at: u64,        // epoch secs
+    pub elapsed_secs: u64,
+    pub transcript_chunks: Vec<TranscriptChunk>,
+    pub chat_messages: Vec<MeetingChatMessage>,
+    pub summary: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct MeetingSession {
+    pub started_at: std::time::SystemTime,
+    pub transcript_chunks: Vec<TranscriptChunk>,
+    pub chat_messages: Vec<MeetingChatMessage>,
+    pub summary: Option<String>,
+    pub status: MeetingStatus,
 }
 
 pub fn init_app_state(app_handle: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
@@ -50,6 +93,7 @@ pub fn init_app_state(app_handle: &tauri::AppHandle) -> Result<(), Box<dyn std::
         loopback_buffer: Mutex::new(Vec::new()),
         loopback_sample_rate: Mutex::new(48000),
         loopback_channels: Mutex::new(2),
+        meeting_session: Mutex::new(None),
     });
 
     Ok(())

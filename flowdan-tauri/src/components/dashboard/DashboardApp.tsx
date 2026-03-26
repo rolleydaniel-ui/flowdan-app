@@ -38,7 +38,14 @@ export function DashboardApp() {
       setRecordingState(event.payload as RecordingState);
     });
 
-    return () => { unlisten.then((fn) => fn()); };
+    const unlistenNav = listen<string>("navigate", (event) => {
+      if (event.payload === "settings") setActiveTab("settings");
+    });
+
+    return () => {
+      unlisten.then((fn) => fn());
+      unlistenNav.then((fn) => fn());
+    };
   }, []);
 
   const handleOnboardingComplete = () => {

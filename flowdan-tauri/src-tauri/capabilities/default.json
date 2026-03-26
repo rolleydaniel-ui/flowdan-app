@@ -13,6 +13,11 @@
     "core:window:allow-minimize",
     "core:window:allow-unminimize",
     "core:window:allow-start-dragging",
+    "core:window:allow-set-size",
+    "core:window:allow-set-position",
+    "core:window:allow-outer-size",
+    "core:window:allow-primary-monitor",
+    "core:window:allow-current-monitor",
     "core:event:default",
     "core:event:allow-listen",
     "core:event:allow-emit",
@@ -22,6 +27,8 @@
     "clipboard-manager:default",
     "clipboard-manager:allow-read-text",
     "clipboard-manager:allow-write-text",
-    "shell:default"
+    "shell:default",
+    "shell:allow-open",
+    "core:path:default"
   ]
 }
