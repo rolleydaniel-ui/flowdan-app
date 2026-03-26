@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlowDan Overlay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://api.fontshare.com" />
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,600,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    html,
+    body,
+    #root {
+      background-color: transparent !important;
+      background: transparent !important;
+      overflow: hidden !important;
+      scrollbar-width: none !important;
+    }
+
+    ::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+
+    body {
+      -webkit-app-region: drag;
+    }
+  </style>
+</head>
+
+<body style="background: transparent !important; margin: 0; padding: 0; overflow: hidden;">
+  <div id="root" style="background: transparent !important;"></div>
+  <script type="module" src="/src/overlay.tsx"></script>
+</body>
+
+</html>
