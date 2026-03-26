@@ -27,6 +27,8 @@
 **[Download FlowDan v2.0.0 for Windows](https://github.com/rolleydaniel-ui/flowdan-app/releases/latest)**
 
 > Just download `FlowDan_2.0.0_x64-setup.exe`, run the installer, and you're ready to go. No coding required.
+>
+> **Note:** Windows SmartScreen may show "Unknown publisher" warning. This is normal for open source apps without a paid code signing certificate. Click **"More info" → "Run anyway"** to proceed. The source code is fully open — you can audit and build it yourself.
 
 You'll need an **OpenAI API key** to use FlowDan — [get one here](https://platform.openai.com/api-keys) ($5 credit is enough for months of use).
 
